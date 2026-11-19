@@ -1,0 +1,222 @@
+:root {
+  --font: 'Space Grotesk', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --bg: #f6f6f3;
+  --surface: #ffffff;
+  --sunken: #ecece7;
+  --ink: #17181a;
+  --ink-2: #3a3c40;
+  --muted: #5f6268;
+  --hair: rgb(23 24 26 / 0.1);
+  --hair-strong: rgb(23 24 26 / 0.2);
+  --focus: #1f6fc7;
+
+  --blue: #2f7fd6;
+  --yellow: #f5b400;
+  --green: #14a06f;
+  --red: #ef3340;
+
+  --ok: #12855b;
+  --warn: #a35f00;
+  --alert: #c8202e;
+
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 18px;
+
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --t-in: 150ms;
+  --t-out: 120ms;
+
+  color-scheme: light;
+}
+
+/* data-theme is set before the first paint (index.html) and kept in step by lib/theme.svelte.js. */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #101113;
+  --surface: #191a1d;
+  --sunken: #0b0c0d;
+  --ink: #f1f1ee;
+  --ink-2: #d2d3cf;
+  --muted: #9c9ea2;
+  --hair: rgb(241 241 238 / 0.09);
+  --hair-strong: rgb(241 241 238 / 0.18);
+  --focus: #6cb0ff;
+
+  --blue: #4693ea;
+  --yellow: #ffc533;
+  --green: #22b47f;
+  --red: #ff4b57;
+
+  --ok: #45d39a;
+  --warn: #ffb547;
+  --alert: #ff6b75;
+}
+
+/* Every element that belongs to a line reads its colour from --c. */
+[data-line='blue'] { --c: var(--blue); }
+[data-line='yellow'] { --c: var(--yellow); }
+[data-line='green'] { --c: var(--green); }
+[data-line='red'] { --c: var(--red); }
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.5 var(--font);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+img,
+svg {
+  display: block;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.skip-link {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 100;
+  padding: 10px 16px;
+  border-radius: var(--r-sm);
+  background: var(--ink);
+  color: var(--bg);
+  font-weight: 600;
+  text-decoration: none;
+  transform: translateY(-200%);
+}
+
+.skip-link:focus-visible {
+  transform: none;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--c);
+}
+
+/* Buttons: one filled style for the main action, one outlined, one square icon button. */
+.btn,
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  border: 1px solid var(--hair-strong);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color var(--t-out) var(--ease),
+    border-color var(--t-out) var(--ease),
+    transform var(--t-out) var(--ease);
+}
+
+.btn {
+  padding: 0 20px;
+}
+
+.btn--primary {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.icon-btn {
+  width: 44px;
+  padding: 0;
+}
+
+.icon-btn[aria-pressed='true'] {
+  color: var(--yellow);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .btn:hover,
+  .icon-btn:hover {
+    border-color: var(--ink);
+    transform: translateY(-1px);
+    transition-duration: var(--t-in);
+  }
+
+  .btn--primary:hover {
+    background: var(--ink-2);
+  }
+}
+
+.btn:active,
+.icon-btn:active {
+  transform: translateY(1px) scale(0.985);
+  transition-duration: 90ms;
+}
+
+.btn:disabled,
+.icon-btn:disabled {
+  cursor: default;
+  opacity: 0.6;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
