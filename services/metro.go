@@ -6,19 +6,25 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/HelderMartins1/metro-lis-go/config"
 	"github.com/HelderMartins1/metro-lis-go/models"
 )
 
 var client = &http.Client{
+	// Without a timeout a Metro API that hangs would hang every request waiting on it.
+	Timeout: 10 * time.Second,
 	Transport: &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	},
 }
 
 func get(cfg *config.Config, endpoint string) (map[string]interface{}, error) {
-	req, _ := http.NewRequest("GET", cfg.URL+endpoint, nil)
+	req, err := http.NewRequest("GET", cfg.URL+endpoint, nil)
+	if err != nil {
+		return nil, err
+	}
 	req.Header.Set("Authorization", "Bearer "+cfg.Token)
 
 	resp, err := client.Do(req)
@@ -87,18 +93,11 @@ func GetDestinations(cfg *config.Config) (map[string]interface{}, error) {
 		}
 		return s
 	}
-	lines := map[string]map[string]struct{}{
-		"blue":   toSet(models.BlueLine),
-		"red":    toSet(models.RedLine),
-		"green":  toSet(models.GreenLine),
-		"yellow": toSet(models.YellowLine),
-	}
-
-	mapped := map[string][]interface{}{
-		"yellow": {},
-		"blue":   {},
-		"green":  {},
-		"red":    {},
+	lines := map[string]map[string]struct{}{}
+	mapped := map[string][]interface{}{}
+	for _, l := range models.Lines {
+		lines[l.ID] = toSet(l.StationMap())
+		mapped[l.ID] = []interface{}{}
 	}
 
 	for _, d := range resp {
@@ -121,19 +120,15 @@ func GetDestinations(cfg *config.Config) (map[string]interface{}, error) {
 	return out, nil
 }
 
-func GetStations(station string) map[string]string {
-	switch station {
-	case "yellow":
-		return models.YellowLine
-	case "blue":
-		return models.BlueLine
-	case "green":
-		return models.GreenLine
-	case "red":
-		return models.RedLine
-	default:
-		return map[string]string{}
+func GetStations(line string) map[string]string {
+	if l, ok := models.LineByID(line); ok {
+		return l.StationMap()
 	}
+	return map[string]string{}
+}
+
+func GetNetwork() []models.Line {
+	return models.Lines
 }
 
 func GetTrains(cfg *config.Config, station string) (interface{}, error) {

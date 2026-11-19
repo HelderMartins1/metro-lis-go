@@ -1,69 +1,51 @@
 package models
 
-var BlueLine = map[string]string{
-	"RB": "Reboleira",
-	"AS": "Amadora Este",
-	"AF": "Alfornelos",
-	"PO": "Pontinha",
-	"CA": "Carnide",
-	"CM": "Colégio Militar/Luz",
-	"AH": "Alto dos Moinhos",
-	"LA": "Laranjeiras",
-	"JZ": "Jardim Zoológico",
-	"PE": "Praça de Espanha",
-	"SS": "São Sebastião",
-	"PA": "Parque",
-	"MP": "Marquês de Pombal",
-	"AV": "Avenida",
-	"RE": "Restauradores",
-	"BC": "Baixa-Chiado",
-	"TP": "Terreiro do Paço",
-	"SP": "Santa Apolónia",
+import (
+	_ "embed"
+	"encoding/json"
+)
+
+type Station struct {
+	Code string `json:"code"`
+	Name string `json:"name"`
 }
 
-var GreenLine = map[string]string{
-	"TE": "Telheiras",
-	"CG": "Campo Grande",
-	"AL": "Alvalade",
-	"RM": "Roma",
-	"AE": "Areeiro",
-	"AM": "Alameda",
-	"AR": "Arroios",
-	"AN": "Anjos",
-	"IN": "Intendente",
-	"MM": "Martim Moniz",
-	"RO": "Rossio",
-	"BC": "Baixa-Chiado",
-	"CS": "Cais do Sodré",
+// Line keeps its stations in network order, from one terminus to the other.
+type Line struct {
+	ID       string    `json:"id"`
+	Name     string    `json:"name"`
+	Stations []Station `json:"stations"`
 }
 
-var RedLine = map[string]string{
-	"AP": "Aeroporto",
-	"EN": "Encarnação",
-	"MO": "Moscavide",
-	"OR": "Oriente",
-	"CR": "Cabo Ruivo",
-	"OS": "Olivais",
-	"CH": "Chelas",
-	"BV": "Bela Vista",
-	"OL": "Olaias",
-	"AM": "Alameda",
-	"SA": "Saldanha",
-	"SS": "São Sebastião",
+func (l Line) StationMap() map[string]string {
+	m := make(map[string]string, len(l.Stations))
+	for _, s := range l.Stations {
+		m[s.Code] = s.Name
+	}
+	return m
 }
 
-var YellowLine = map[string]string{
-	"OD": "Odivelas",
-	"SR": "Senhor Roubado",
-	"AX": "Ameixoeira",
-	"LU": "Lumiar",
-	"QC": "Quinta das Conchas",
-	"CG": "Campo Grande",
-	"CU": "Cidade Universitária",
-	"EC": "Entrecampos",
-	"CP": "Campo Pequeno",
-	"SA": "Saldanha",
-	"PI": "Picoas",
-	"MP": "Marquês de Pombal",
-	"RA": "Rato",
+// network.json is the one copy of the network: the frontend imports the same
+// file, so the app can draw lines and stations with no connection at all.
+//
+//go:embed network.json
+var network []byte
+
+var Lines = mustParse(network)
+
+func mustParse(data []byte) []Line {
+	var lines []Line
+	if err := json.Unmarshal(data, &lines); err != nil {
+		panic("models/network.json: " + err.Error())
+	}
+	return lines
+}
+
+func LineByID(id string) (Line, bool) {
+	for _, l := range Lines {
+		if l.ID == id {
+			return l, true
+		}
+	}
+	return Line{}, false
 }

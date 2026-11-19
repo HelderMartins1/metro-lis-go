@@ -16,6 +16,23 @@ func StationsHandler() http.HandlerFunc {
 	}
 }
 
+func PositionsHandler(positions *services.PositionsService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		data, err := positions.Get(chi.URLParam(r, "line"))
+		if err != nil {
+			writeJSON(w, http.StatusBadGateway, map[string]string{"error": err.Error()})
+			return
+		}
+		writeJSON(w, http.StatusOK, data)
+	}
+}
+
+func NetworkHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, http.StatusOK, services.GetNetwork())
+	}
+}
+
 func TrainsHandler(cfg *config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		code := chi.URLParam(r, "code")
