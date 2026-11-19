@@ -1,0 +1,24 @@
+# systemd unit for the Cais API (api.caislx.tech). Installed by scripts/setup-server.sh.
+[Unit]
+Description=Cais API (tempos do metro de Lisboa)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=cais
+Group=cais
+# The server reads .env from here.
+WorkingDirectory=/var/www/cais
+ExecStart=/var/www/cais/cais
+Restart=on-failure
+RestartSec=5
+
+# It only needs to write its push data.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/www/cais/data
+
+[Install]
+WantedBy=multi-user.target

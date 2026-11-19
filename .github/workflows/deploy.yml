@@ -15,27 +15,59 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version: '1.25'
+          go-version-file: go.mod
 
-      - name: Build binary
-        run: GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o metro-lis-go .
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: '26'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
 
-      - name: Copy binary to VM
+      - name: Test
+        run: go test ./config ./services ./push
+
+      - name: Build frontend
+        working-directory: frontend
+        env:
+          # The frontend is served from caislx.tech and calls the API on its own subdomain.
+          VITE_API_URL: https://api.caislx.tech
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build binary and package
+        run: |
+          GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o cais .
+          tar -czf cais-web.tgz -C web/dist .
+
+      - name: Copy to VM
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
-          source: metro-lis-go
-          target: /tmp
+          source: cais,cais-web.tgz
+          target: /tmp/cais-deploy
 
-      - name: Swap binary and restart service
+      # /var/www/cais is prepared once by scripts/setup-server.sh.
+      - name: Install and restart
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
           script: |
-            sudo mv /tmp/metro-lis-go /opt/metro-lis-go/metro-lis-go
-            sudo chmod +x /opt/metro-lis-go/metro-lis-go
-            sudo systemctl restart metro-go
+            set -e
+            cd /tmp/cais-deploy
+            sudo install -m 755 -o root -g root cais /var/www/cais/cais
+            # Swap the frontend in one move, so nobody loads half of each version.
+            sudo rm -rf /var/www/cais/www.new /var/www/cais/www.old
+            sudo install -d -m 755 /var/www/cais/www.new
+            sudo tar -xzf cais-web.tgz -C /var/www/cais/www.new --no-same-owner
+            sudo mv /var/www/cais/www /var/www/cais/www.old
+            sudo mv /var/www/cais/www.new /var/www/cais/www
+            sudo rm -rf /var/www/cais/www.old /tmp/cais-deploy
+            sudo systemctl restart cais
+            sleep 2
+            systemctl is-active --quiet cais || { sudo journalctl -u cais -n 30 --no-pager; exit 1; }
